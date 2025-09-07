@@ -599,6 +599,7 @@
             border: 1px solid rgba(150, 100, 255, 0.3);
             box-shadow: 0 0 10px rgba(100, 80, 255, 0.3);
             text-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
+            display: inline-block;
         }
         
         @media (min-width: 768px) {
@@ -778,6 +779,62 @@
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
         }
+
+        /* Стили для Telegram WebApp */
+        .telegram-login {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .telegram-login-btn {
+            background: linear-gradient(135deg, #0088cc, #00aced);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 136, 204, 0.4);
+        }
+
+        .telegram-login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 136, 204, 0.6);
+        }
+
+        .telegram-user {
+            text-align: center;
+            margin: 15px 0;
+            padding: 10px;
+            background: rgba(0, 136, 204, 0.2);
+            border-radius: 10px;
+            border: 1px solid rgba(0, 136, 204, 0.3);
+        }
+
+        .telegram-user img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .telegram-user p {
+            margin: 5px 0;
+        }
+
+        .telegram-logout {
+            background: rgba(204, 0, 0, 0.6);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -791,6 +848,18 @@
                 <span>Игрок: <span id="playerName">Гость</span></span>
                 <span class="player-level">Ур. <span id="playerLevel">1</span></span>
             </div>
+        </div>
+        
+        <div id="telegramLogin" class="telegram-login">
+            <p>Для игры через Telegram авторизуйтесь:</p>
+            <button class="telegram-login-btn" onclick="initTelegramWebApp()">🔐 Войти через Telegram</button>
+        </div>
+        
+        <div id="telegramUser" class="telegram-user" style="display: none;">
+            <img id="userPhoto" src="" alt="User Photo">
+            <p><strong id="userName"></strong></p>
+            <p>ID: <span id="userId"></span></p>
+            <button class="telegram-logout" onclick="logoutTelegram()">🚪 Выйти</button>
         </div>
         
         <div class="subscription-panel" id="subscriptionPanel">
@@ -824,59 +893,524 @@
             <div class="location-selector">
                 <h3>📍 Выберите локацию:</h3>
                 <button class="location-btn" onclick="selectLocation('smoking')">🚬 Курилка</button>
-                <button class="location-btn" onclick="selectLocation('toilet')">🚽 Толчок</button>
-                <button class="location-btn" onclick="selectLocation('mountains')">🏔️ Горы Кавказа</button>
-                <button class="location-btn" onclick="selectLocation('polyk')">🏫 Полик</button>
-            </div>
-            
-            <div class="dialogue" id="dialogue">
-                💪 Выберите локацию и начните бой!
+                <button class="location-btn" onclick="selectLocation('toilet')">🚽 Туалет</button>
+                <button class="location-btn" onclick="selectLocation('mountains')">🏔️ Горы</button>
+                <button class="location-btn" onclick="selectLocation('polyk')">🏢 Полик</button>
             </div>
             
             <div class="buttons">
-                <button class="btn attack-btn" onclick="playerAttack()">🥊 Атака</button>
-                <button class="btn heal-btn" id="healBtn" onclick="playerHeal()">💊 Лечение</button>
+                <button class="btn attack-btn" onclick="playerAttack()">⚔️ Атаковать</button>
+                <button class="btn heal-btn" onclick="playerHeal()" id="healBtn">💖 Лечиться</button>
+                <button class="btn run-btn" onclick="playerRun()">🏃 Бежать</button>
                 <button class="btn status-btn" onclick="showStatus()">📊 Статус</button>
-                <button class="btn run-btn" onclick="runAway()">🏃 Бежать</button>
+            </div>
+            
+            <div class="dialogue" id="dialogue">
+                Добро пожаловать в битву с АзизДжоном! Выберите действие.
             </div>
             
             <div class="battle-log" id="battleLog"></div>
         </div>
         
         <div id="pvpSection" class="pvp-section">
-            <!-- PVP контент -->
+            <h3>🎮 Режим PVP</h3>
+            <p>Сразитесь с другими игроками!</p>
+            <button class="btn" onclick="findOpponent()">🔍 Найти соперника</button>
+            <div class="battle-log" id="pvpLog"></div>
         </div>
         
         <div id="tournamentSection" class="tournament-section">
-            <!-- Турнирный контент -->
+            <h3>🏆 Турнирный режим</h3>
+            <p>Сразитесь в турнире против сильнейших!</p>
+            <button class="btn" onclick="joinTournament()">🎯 Вступить в турнир</button>
+            <div class="battle-log" id="tournamentLog"></div>
         </div>
         
         <div id="survivalSection" class="survival-section">
-            <!-- Контент выживания -->
+            <h3>🔥 Режим выживания</h3>
+            <p>Сразитесь с волнами врагов!</p>
+            <button class="btn" onclick="startSurvival()">⚔️ Начать выживание</button>
+            <div class="battle-log" id="survivalLog"></div>
         </div>
+    </div>
+    
+    <div id="gameOverScreen" class="game-over" style="display: none;">
+        <h2>💀 GAME OVER 💀</h2>
+        <p>АзизДжон победил вас!</p>
+        <button onclick="restartGame()">🔄 Начать заново</button>
+    </div>
+    
+    <div id="victoryScreen" class="victory" style="display: none;">
+        <h2>🎉 ПОБЕДА! 🎉</h2>
+        <p>Вы победили АзизДжона!</p>
+        <button onclick="restartGame()">🔄 Новая игра</button>
     </div>
 
     <script>
-        // Игровое состояние
-        const gameState = {
-            playerHealth: 100,
-            bossHealth: 150,
-            healCooldown: 0, // Текущее время перезарядки лечения
-            healCooldownMax: 3, // Полная перезарядка лечения (3 хода)
-            gameActive: false,
-            currentLocation: null,
-            playerLevel: 1,
-            playerName: 'Гость',
-            turnCount: 0 // Счетчик ходов для отслеживания перезарядки
+        // Telegram WebApp initialization
+        let tg = window.Telegram.WebApp;
+        let user = null;
+        
+        // Инициализация Telegram WebApp
+        function initTelegramWebApp() {
+            if (typeof Telegram !== 'undefined') {
+                tg.expand();
+                tg.enableClosingConfirmation();
+                
+                // Получаем данные пользователя
+                user = tg.initDataUnsafe.user;
+                
+                if (user) {
+                    document.getElementById('telegramLogin').style.display = 'none';
+                    document.getElementById('telegramUser').style.display = 'block';
+                    
+                    document.getElementById('userName').textContent = `${user.first_name}${user.last_name ? ' ' + user.last_name : ''}`;
+                    document.getElementById('userId').textContent = user.id;
+                    document.getElementById('playerName').textContent = user.username || user.first_name;
+                    
+                    if (user.photo_url) {
+                        document.getElementById('userPhoto').src = user.photo_url;
+                    }
+                    
+                    // Проверяем подписку
+                    checkSubscriptionStatus();
+                }
+            } else {
+                alert('Telegram WebApp не доступен. Откройте игру через Telegram бота.');
+            }
+        }
+        
+        // Выход из Telegram аккаунта
+        function logoutTelegram() {
+            user = null;
+            document.getElementById('telegramLogin').style.display = 'block';
+            document.getElementById('telegramUser').style.display = 'none';
+            document.getElementById('playerName').textContent = 'Гость';
+        }
+        
+        // Проверка статуса подписки
+        function checkSubscriptionStatus() {
+            // Здесь должна быть логика проверки подписки на канал
+            // Временно отображаем панель подписки для демонстрации
+            document.getElementById('subscriptionPanel').style.display = 'block';
+        }
+        
+        // Проверка подписки
+        function checkSubscription() {
+            // Логика проверки подписки
+            alert('Проверка подписки... В реальной игре здесь будет проверка подписки на канал');
+            document.getElementById('subscriptionPanel').style.display = 'none';
+        }
+        
+        // Основная игровая логика
+        let player = {
+            health: 100,
+            maxHealth: 100,
+            attack: 10,
+            defense: 5,
+            level: 1,
+            experience: 0,
+            coins: 0
         };
-
-        const locationNames = {
-            smoking: '🚬 Курилка',
-            toilet: '🚽 Толчок',
-            mountains: '🏔️ Горы Кавказа',
-            polyk: '🏫 Полик'
+        
+        let boss = {
+            health: 150,
+            maxHealth: 150,
+            attack: 15,
+            defense: 8
         };
-
-        // Добавляем создание частиц для фона
-        function createParticles(type) {
-            const particlesContainer =
+        
+        let currentLocation = 'smoking';
+        let healCooldown = 0;
+        let gameActive = true;
+        
+        // Создание частиц для фона
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('particle');
+                
+                // Разные стили частиц для разных локаций
+                switch(currentLocation) {
+                    case 'smoking':
+                        particle.classList.add('smoking-particle');
+                        break;
+                    case 'toilet':
+                        particle.classList.add('toilet-particle');
+                        break;
+                    case 'mountains':
+                        particle.classList.add('mountain-particle');
+                        break;
+                    case 'polyk':
+                        particle.classList.add('polyk-particle');
+                        break;
+                }
+                
+                // Случайная позиция и размер
+                const size = Math.random() * 10 + 5;
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.left = `${Math.random() * 100}%`;
+                particle.style.top = `${Math.random() * 100}%`;
+                
+                // Случайная анимация
+                particle.style.animationDuration = `${Math.random() * 10 + 10}s`;
+                particle.style.animationDelay = `${Math.random() * 5}s`;
+                
+                particlesContainer.appendChild(particle);
+            }
+        }
+        
+        // Очистка частиц
+        function clearParticles() {
+            const particlesContainer = document.getElementById('particles');
+            particlesContainer.innerHTML = '';
+        }
+        
+        // Выбор локации
+        function selectLocation(location) {
+            currentLocation = location;
+            clearParticles();
+            createParticles();
+            
+            // Изменение фона body
+            document.body.className = location;
+            
+            // Бонусы в зависимости от локации
+            let bonusText = '';
+            switch(location) {
+                case 'smoking':
+                    bonusText = '🚬 Курилка: +5% к урону';
+                    break;
+                case 'toilet':
+                    bonusText = '🚽 Туалет: +10% к лечению';
+                    break;
+                case 'mountains':
+                    bonusText = '🏔️ Горы: +5% к защите';
+                    break;
+                case 'polyk':
+                    bonusText = '🏢 Полик: +7% ко всем характеристикам';
+                    break;
+            }
+            
+            addToLog(`📍 Локация изменена: ${bonusText}`);
+            updateDialogue(`Вы переместились в ${getLocationName(location)}. ${bonusText}`);
+        }
+        
+        // Получение названия локации
+        function getLocationName(location) {
+            switch(location) {
+                case 'smoking': return 'Курилку 🚬';
+                case 'toilet': return 'Туалет 🚽';
+                case 'mountains': return 'Горы 🏔️';
+                case 'polyk': return 'Полик 🏢';
+                default: return location;
+            }
+        }
+        
+        // Атака игрока
+        function playerAttack() {
+            if (!gameActive) return;
+            
+            // Модификаторы урона в зависимости от локации
+            let damageModifier = 1;
+            if (currentLocation === 'smoking') damageModifier = 1.05;
+            if (currentLocation === 'polyk') damageModifier = 1.07;
+            
+            const damage = Math.max(1, Math.floor(player.attack * damageModifier) - boss.defense);
+            boss.health -= damage;
+            
+            if (boss.health < 0) boss.health = 0;
+            
+            updateHealthBars();
+            addToLog(`⚔️ Вы нанесли ${damage} урона АзизДжону!`);
+            
+            if (boss.health <= 0) {
+                victory();
+                return;
+            }
+            
+            // Ход босса
+            setTimeout(bossAttack, 1000);
+        }
+        
+        // Атака босса
+        function bossAttack() {
+            if (!gameActive) return;
+            
+            // Модификаторы защиты в зависимости от локации
+            let defenseModifier = 1;
+            if (currentLocation === 'mountains') defenseModifier = 0.95;
+            if (currentLocation === 'polyk') defenseModifier = 0.93;
+            
+            const damage = Math.max(1, Math.floor(boss.attack * defenseModifier) - player.defense);
+            player.health -= damage;
+            
+            if (player.health < 0) player.health = 0;
+            
+            updateHealthBars();
+            addToLog(`💥 АзизДжон нанес вам ${damage} урона!`);
+            
+            if (player.health <= 0) {
+                gameOver();
+            }
+        }
+        
+        // Лечение игрока
+        function playerHeal() {
+            if (!gameActive) return;
+            
+            if (healCooldown > 0) {
+                updateDialogue(`Лечение перезаряжается! Осталось ходов: ${healCooldown}`);
+                return;
+            }
+            
+            // Модификаторы лечения в зависимости от локации
+            let healModifier = 1;
+            if (currentLocation === 'toilet') healModifier = 1.1;
+            if (currentLocation === 'polyk') healModifier = 1.07;
+            
+            const healAmount = Math.floor(20 * healModifier);
+            player.health = Math.min(player.maxHealth, player.health + healAmount);
+            
+            updateHealthBars();
+            addToLog(`💖 Вы восстановили ${healAmount} здоровья!`);
+            updateDialogue(`Вы использовали лечение и восстановили ${healAmount} здоровья!`);
+            
+            healCooldown = 3;
+            updateHealCooldown();
+            
+            // Ход босса
+            setTimeout(bossAttack, 1000);
+        }
+        
+        // Попытка бегства
+        function playerRun() {
+            if (!gameActive) return;
+            
+            const success = Math.random() > 0.7; // 30% шанс успеха
+            
+            if (success) {
+                addToLog("🏃 Вы успешно сбежали от АзизДжона!");
+                updateDialogue("Вам удалось сбежать! Но АзизДжон будет ждать реванша...");
+                gameActive = false;
+                
+                setTimeout(() => {
+                    alert("Вы сбежали! Игра будет перезапущена.");
+                    restartGame();
+                }, 2000);
+            } else {
+                addToLog("💥 Попытка бегства не удалась! АзизДжон атакует!");
+                updateDialogue("Не удалось сбежать! АзизДжон атакует в ответ!");
+                
+                // Ход босса
+                setTimeout(bossAttack, 1000);
+            }
+        }
+        
+        // Показать статус
+        function showStatus() {
+            updateDialogue(`Уровень: ${player.level} | Опыт: ${player.experience}/${player.level * 100} | Монеты: ${player.coins}`);
+            addToLog("📊 Просмотр статуса персонажа");
+        }
+        
+        // Обновление полос здоровья
+        function updateHealthBars() {
+            document.getElementById('playerHealth').textContent = player.health;
+            document.getElementById('bossHealth').textContent = boss.health;
+            
+            const playerHealthPercent = (player.health / player.maxHealth) * 100;
+            const bossHealthPercent = (boss.health / boss.maxHealth) * 100;
+            
+            document.getElementById('playerHealthBar').style.width = `${playerHealthPercent}%`;
+            document.getElementById('bossHealthBar').style.width = `${bossHealthPercent}%`;
+        }
+        
+        // Обновление перезарядки лечения
+        function updateHealCooldown() {
+            const healBtn = document.getElementById('healBtn');
+            const cooldownInfo = document.getElementById('healCooldownInfo');
+            
+            if (healCooldown > 0) {
+                healBtn.disabled = true;
+                cooldownInfo.textContent = `(Перезарядка: ${healCooldown})`;
+            } else {
+                healBtn.disabled = false;
+                cooldownInfo.textContent = '';
+            }
+        }
+        
+        // Добавление сообщения в лог
+        function addToLog(message) {
+            const log = document.getElementById('battleLog');
+            const entry = document.createElement('div');
+            entry.classList.add('log-entry');
+            entry.textContent = message;
+            
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        // Обновление диалогового окна
+        function updateDialogue(text) {
+            document.getElementById('dialogue').textContent = text;
+        }
+        
+        // Конец игры (поражение)
+        function gameOver() {
+            gameActive = false;
+            document.getElementById('gameOverScreen').style.display = 'flex';
+            addToLog("💀 Вы проиграли! АзизДжон победил!");
+            
+            // Отправка результата в Telegram
+            if (user) {
+                sendGameResult(false);
+            }
+        }
+        
+        // Победа
+        function victory() {
+            gameActive = false;
+            
+            // Награда за победу
+            const expGain = 50;
+            const coinsGain = 25;
+            
+            player.experience += expGain;
+            player.coins += coinsGain;
+            
+            // Проверка повышения уровня
+            if (player.experience >= player.level * 100) {
+                player.level++;
+                player.maxHealth += 10;
+                player.attack += 2;
+                player.defense += 1;
+                player.health = player.maxHealth;
+                player.experience = 0;
+                
+                addToLog(`🎉 Поздравляем! Вы достигли уровня ${player.level}!`);
+            }
+            
+            document.getElementById('playerLevel').textContent = player.level;
+            document.getElementById('victoryScreen').style.display = 'flex';
+            addToLog(`🎉 Вы победили АзизДжона! Получено: ${expGain} опыта и ${coinsGain} монет.`);
+            
+            // Отправка результата в Telegram
+            if (user) {
+                sendGameResult(true);
+            }
+        }
+        
+        // Перезапуск игры
+        function restartGame() {
+            player.health = player.maxHealth;
+            boss.health = boss.maxHealth;
+            
+            gameActive = true;
+            healCooldown = 0;
+            
+            updateHealthBars();
+            updateHealCooldown();
+            
+            document.getElementById('gameOverScreen').style.display = 'none';
+            document.getElementById('victoryScreen').style.display = 'none';
+            
+            document.getElementById('battleLog').innerHTML = '';
+            updateDialogue('Игра перезапущена! Выберите действие.');
+            
+            addToLog('🔄 Игра перезапущена. Удачи!');
+        }
+        
+        // Показать режим игры
+        function showMode(mode) {
+            document.getElementById('singlePlayer').style.display = 'none';
+            document.getElementById('pvpSection').style.display = 'none';
+            document.getElementById('tournamentSection').style.display = 'none';
+            document.getElementById('survivalSection').style.display = 'none';
+            
+            switch(mode) {
+                case 'single':
+                    document.getElementById('singlePlayer').style.display = 'block';
+                    break;
+                case 'pvp':
+                    document.getElementById('pvpSection').style.display = 'block';
+                    break;
+                case 'tournament':
+                    document.getElementById('tournamentSection').style.display = 'block';
+                    break;
+                case 'survival':
+                    document.getElementById('survivalSection').style.display = 'block';
+                    break;
+            }
+        }
+        
+        // Функции для других режимов (заглушки)
+        function findOpponent() {
+            addToLog("🔍 Поиск соперника...");
+            setTimeout(() => {
+                addToLog("❌ Соперники не найдены. Попробуйте позже.");
+            }, 2000);
+        }
+        
+        function joinTournament() {
+            addToLog("🎯 Попытка вступить в турнир...");
+            setTimeout(() => {
+                addToLog("❌ Турнир уже начался. Следующий турнир через 2 дня.");
+            }, 2000);
+        }
+        
+        function startSurvival() {
+            addToLog("⚔️ Начало режима выживания...");
+            setTimeout(() => {
+                addToLog("❌ Режим выживания временно недоступен.");
+            }, 2000);
+        }
+        
+        // Отправка результатов игры в Telegram
+        function sendGameResult(isVictory) {
+            if (tg && user) {
+                const result = isVictory ? 'победа' : 'поражение';
+                
+                // Здесь можно отправить данные на сервер или использовать Telegram WebApp
+                tg.showPopup({
+                    title: isVictory ? '🎉 Победа!' : '💀 Поражение',
+                    message: isVictory ? 
+                        `Вы победили АзизДжона и получили награду!` :
+                        `АзизДжон оказался сильнее... Попробуйте еще раз!`,
+                    buttons: [{type: 'ok'}]
+                });
+                
+                // Можно отправить данные обратно в бота
+                tg.sendData(JSON.stringify({
+                    action: 'game_result',
+                    result: result,
+                    level: player.level,
+                    coins: player.coins
+                }));
+            }
+        }
+        
+        // Инициализация игры
+        window.onload = function() {
+            updateHealthBars();
+            createParticles();
+            
+            // Автоматически инициализируем Telegram WebApp если открыто в Telegram
+            if (typeof Telegram !== 'undefined' && tg.initDataUnsafe.user) {
+                initTelegramWebApp();
+            }
+            
+            // Обновление перезарядки лечения каждый ход
+            setInterval(() => {
+                if (healCooldown > 0) {
+                    healCooldown--;
+                    updateHealCooldown();
+                }
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
